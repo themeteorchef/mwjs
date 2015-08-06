@@ -1,0 +1,32 @@
+.list-group input[type="checkbox"] {
+  position: relative;
+  display: inline-block;
+  top: -1px;
+  margin-right: 5px;
+}
+
+.list-group label {
+  float: left;
+  display: block;
+  margin-top: 4px;
+}
+
+.list-group {
+  margin-top: 20px;
+}
+
+.list-group-item .fa-remove {
+  float: right;
+  font-size: 18px;
+  margin-top: 5px;
+  color: red;
+}
+
+
+.list-group-item.blooped {
+  opacity: 0.5;
+}
+
+.list-group-item.blooped label {
+  text-decoration: line-through;
+}

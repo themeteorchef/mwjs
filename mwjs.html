@@ -1,0 +1,48 @@
+<head>
+  <title>mwjs</title>
+</head>
+
+<body>
+  <div class="container">
+    {{> addBlipForm}}
+    {{> showBlips}}
+  </div> <!-- end .container -->
+</body>
+
+<template name="addBlipForm">
+  <h4 class="page-header">Add a Blip</h4>
+  <label for="blip">What do you need to bloop, friend?</label>
+  <div class="row">
+    <div class="col-xs-8 col-sm-10">
+      <input type="text" name="blip" class="form-control" placeholder="I need to bloop the blip out of...">
+    </div>
+    <div class="col-xs-4 col-sm-2">
+      <button class="btn btn-success btn-block add-blip">Add Blip</button>
+    </div>
+  </div>
+</template>
+
+<template name="showBlips">
+  <ul class="list-group">
+    {{#each blips}}
+      <!--
+        Notice that we can nest templates within templates without the need to
+        include them above within our <body> tag. Nice!
+      -->
+      {{> blip}}
+    {{else}}
+      <p class="alert alert-info">You've blooped all your blips! High five :)</p>
+    {{/each}}
+  </ul>
+
+  {{#if hasBloopedBlips}}
+    <button type="button" class="btn btn-block clear-blooped-blips" name="button">Clear Blooped Blips</button>
+  {{/if}}
+</template>
+
+<template name="blip">
+  <li class="list-group-item clearfix {{#if blooped}}blooped{{/if}}">
+    <label><input type="checkbox" class="bloop-it" checked="{{blooped}}"> {{toBloop}}</label>
+    <i class="fa fa-remove delete-blip"></i>
+  </li>
+</template>
