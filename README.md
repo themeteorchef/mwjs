@@ -162,26 +162,30 @@ In the same file, we add our `addBlipForm` template by using the Spacebars inclu
 
 Now that we have a way to enter information into our application, we need to actually take that information and _insert it_ into our collection. How do we do it?
 
+For the sake of example, we're going to make use of Meteor's "monolithic" structure style which allows us to keep all of our JavaScript code in a single file. To break it up, we're going to use some handy variables we get from Meteor `Meteor.isClient` and `Meteor.isServer`. Because all of our code will be on the client we'll only use `Meteor.isClient`, but what we learn will apply to the server as well. Let's take a look at setting this up:
+
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.addBlipForm.events({
-  'click .add-blip': function( event, template ) {
-    var blipInput   = template.find( "[name='blip']" ),
-        blipToBloop = blipInput.value;
+if ( Meteor.isClient ) {
+  Template.addBlipForm.events({
+    'click .add-blip': function( event, template ) {
+      var blipInput   = template.find( "[name='blip']" ),
+          blipToBloop = blipInput.value;
 
-    Blips.insert({
-      toBloop: blipToBloop,
-      blooped: false
-    }, function( error, response ) {
-      if ( error ) {
-        alert( error.reason );
-      } else {
-        blipInput.value = "";
-      }
-    });
-  }
-});
+      Blips.insert({
+        toBloop: blipToBloop,
+        blooped: false
+      }, function( error, response ) {
+        if ( error ) {
+          alert( error.reason );
+        } else {
+          blipInput.value = "";
+        }
+      });
+    }
+  });
+}
 ```
 Woah! Some cool stuff going on here. In Meteor, when we want to add an event handler to our app, we do it at the _template level_. This allows us to scope our events down to the current template instance, making our code a little cleaner and easier to reason about. Here, we showcase adding events to our `addBlipForm` using Meteor's event map syntax. Pretty simple, yeah?
 
@@ -258,15 +262,19 @@ Getting a better idea of what's happening? We have this `{{#each blips}}` iterat
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.showBlips.helpers({
-  blips: function() {
-    var getBlips = Blips.find();
+if ( Meteor.isClient ) {
+  [...]
 
-    if ( getBlips ) {
-      return getBlips;
+  Template.showBlips.helpers({
+    blips: function() {
+      var getBlips = Blips.find();
+
+      if ( getBlips ) {
+        return getBlips;
+      }
     }
-  }
-});
+  });
+}
 ```
 
 Warming up to Meteor yet? Similar to our events map from earlier, we can also define _helpers_ on our template. Helpers can be used for things like returning data and helping us with logic in our templates. Most commonly, we can use helpers to return data to our template. Here, we've created a helper called `blips`. Make note of that. `blips` here corresponds to `{{#each blips}}` in our template. If we were to change `blips` to `pizzas`, then we'd do something like `{{#each pizzas}}` in the template. Make sense?
@@ -292,23 +300,27 @@ Let's look at the code to get it done.
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.blip.events({
-  'click .bloop-it': function( event, template ) {
-    var blip = this._id;
+if ( Meteor.isClient ) {
+  [...]
 
-    Blips.update({
-      _id: blip
-    }, {
-      $set: {
-        blooped: !this.blooped
-      }
-    }, function( error, response ) {
-      if ( error ) {
-        alert( error.reason );
-      }
-    });
-  }
-});
+  Template.blip.events({
+    'click .bloop-it': function( event, template ) {
+      var blip = this._id;
+
+      Blips.update({
+        _id: blip
+      }, {
+        $set: {
+          blooped: !this.blooped
+        }
+      }, function( error, response ) {
+        if ( error ) {
+          alert( error.reason );
+        }
+      });
+    }
+  });
+}
 ```
 
 Nice and simple. Because we're focused on marking individual blips as blooped, we've setup an event map on our `blip` template (the one we nested in our {{#each blips}} loop). Next, we add a click event on the `.bloop-it` class which we set on our checkbox element earlier. Inside, we get to do something neat. See where we assign the var `blip` to `this._id`? By default, Meteor gives us the current data context for the template in question through `this`. Because we're on one of our looped `blip` templates, this means `this._id` will give us the ID for the blip (or list item) where the click event originates. How cool is that!
@@ -344,12 +356,16 @@ Good? Okay. So how do we know when there are blooped blips to even clear? Let's 
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.showBlips.helpers({
-  hasBloopedBlips: function() {
-    var getBlipCount = Blips.find( { "blooped": true } ).count();
-    return getBlipCount > 0 ? true : false;
-  }
-});
+if ( Meteor.isClient ) {
+  [...]
+
+  Template.showBlips.helpers({
+    hasBloopedBlips: function() {
+      var getBlipCount = Blips.find( { "blooped": true } ).count();
+      return getBlipCount > 0 ? true : false;
+    }
+  });
+}
 ```
 
 Here, we start to get a little fancy. First, we add a new helper function to our `showBlips` template. Inside, we assign a `find()` call on our `Blips` collection to a variable `getBlipCount`. Pay attention here. Notice that unlike before where we just called `Blips.find()` with no arguments, here we get a little more specific. Because we only want to show our "Clear Blooped Blips" button when there are blooped blips (I know) to clear, we need to know when there are blooped blips in the database. By passing `{ "blooped": true }` to our `find()` query, we're saying "only give me the items in the Blips collection where the item's `blooped` value is `true`." Pretty simple.
@@ -363,17 +379,21 @@ Neat! Last step: let's make this actually clear the blooped blips.
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.showBlips.events({
-  'click .clear-blooped-blips': function() {
-    var bloopedBlips = Blips.find( { blooped: true } ).fetch();
+if ( Meteor.isClient ) {
+  [...]
 
-    for ( var blip in bloopedBlips ) {
-      var item = bloopedBlips[ blip ];
-      Blips.remove( item._id );
+  Template.showBlips.events({
+    'click .clear-blooped-blips': function() {
+      var bloopedBlips = Blips.find( { blooped: true } ).fetch();
+
+      for ( var blip in bloopedBlips ) {
+        var item = bloopedBlips[ blip ];
+        Blips.remove( item._id );
+      }
+
     }
-
-  }
-});
+  });
+}
 ```
 
 Pretty straightforward. We've got a click event on our "Clear Blooped Blips" button, good. When that event fires, we do a `find()` on our `Blips` collection, again, passing `{ blooped: true }` so we only get back the items that are most definitely blooped. On the end, instead of `.count()` we call `.fetch()`. What's that? This is just a convenience method we get which converts our MongoDB cursor into a plain `Array`. This is handy when we need to just get the raw data and work with it directly.
@@ -391,24 +411,28 @@ We'll skip the UI for this part and jump straight to the logic (it's just the `<
 <p class="block-header">mwjs.js</p>
 
 ```language-javascript
-Template.blip.events({
-  'click .delete-blip': function( event, template ) {
+if ( Meteor.isClient ) {
+  [...]
 
-    var confirmDelete = confirm( "Are you sure? This blip will be permanently deleted. Forever Unbloopable." );
+  Template.blip.events({
+    'click .delete-blip': function( event, template ) {
 
-    if ( confirmDelete ) {
-      var blip = this._id;
+      var confirmDelete = confirm( "Are you sure? This blip will be permanently deleted. Forever Unbloopable." );
 
-      Blips.remove({
-        _id: blip
-      }, function( error, response ) {
-        if ( error ) {
-          alert( error.reason );
-        }
-      });
+      if ( confirmDelete ) {
+        var blip = this._id;
+
+        Blips.remove({
+          _id: blip
+        }, function( error, response ) {
+          if ( error ) {
+            alert( error.reason );
+          }
+        });
+      }
     }
-  }
-});
+  });
+}
 ```
 
 Pretty much what you expected? We set up our click event. Easy. Then because we're performing a destructive action we setup a confirm dialog. Cool. Then, if we get the OK to go to hammer town ([not this hammertown](http://media.giphy.com/media/11rIergnpiYpvW/giphy.gif)), we grab the `_id` value from the current data context (the blip we clicked the delete icon in) and...BOOM! Gone! Outta here! Donezo!
